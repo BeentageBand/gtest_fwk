@@ -75,10 +75,18 @@ endef
 #all : $($(_build_)_GTEST_TARG_INC) $($(_build_)_LIB_DIR)/lib$($(_build_)_lib_name).a 
 #
 define $(_build_)_$(_curr_)_LIB_NAME_MAKE
+
+$(_build_)_clean+=$($(_build)_GTEST_PATH)/make/*.a 
+$(_build_)_clean+=$($(_build)_GTEST_PATH)/make/*.o
+$(_build_)_clean+=$($(_build)_GTEST_PATH)/make/*.exe
+
 $($(_build_)_LIB_DIR)/$(addprefix $(_lprefix_), $(addsuffix $(_lib_ext_), $($(_build_)_$(_curr_)_lib_name) )) : \
 $($(_build)_GTEST_PATH)/make/$(addsuffix $(_lib_ext_), $($(_build_)_$(_curr_)_lib_name) ) $($(_build_)_LIB_DIR)
 	cd $($(_build_)_LIB_DIR)
 	cp -sf $(realpath .)/$$< $$@;
+
+$($(_build)_GTEST_PATH)/make/$(addsuffix $(_lib_ext_), $($(_build_)_$(_curr_)_lib_name) ) : 
+	$(MAKE) gtest_main.a -C $($(_build)_GTEST_PATH)/make/;
 endef
 #=======================================================================================#
 # LOCAL DEFINE EXPANSIONS
@@ -99,12 +107,6 @@ $(eval \
    )\
 )
 
-$(eval \
-   $(call INFO_VERBOSE_template, \
-      $($(_build)_GTEST_PATH)/make/$(addsuffix $(_lib_ext_), $($(_build_)_$(_curr_)_lib_name) ) : ;\
-      	$(MAKE) gtest_main -C $($(_build)_GTEST_PATH)/make/; \
-   )\
-)
 #=======================================================================================#
 # INCLUDE PK PROJECT UTILITY
 #=======================================================================================#
