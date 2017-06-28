@@ -8,59 +8,16 @@
 #=======================================================================================#
 # DEFINE PACKAGE RULE
 #=======================================================================================#
-define $(_build_)_$(_curr_)_MAKE
-#=======================================================================================#
-# OBJECTS DIRECTORY
-# e.g: 
-#     $(_build_)_$(_curr_)_src_dir=pk_module_N_code/_src
-#     or
-#     $(_build_)_$(_curr_)_src_dir=_src
-#=======================================================================================#
-$(_build_)_$(_curr_)_src_dir=
-
+define $(_flavor_)_$(_feat_)_MAKE
 #=======================================================================================#
 # LIB REQUISITES
 #=======================================================================================#
-
-##
- # Object Requisites
- # e.g: $(_build_)_$(_curr_)_lib_objs=$($(_build_)_OBJ_DIR)/my_lib_obj$(_obj_ext_) \
- ##
-$(_build_)_$(_curr_)_lib_objs=
-
-##
- # Library Requisites
- # e.g: $(_build_)_$(_curr_)_lib_libs=$($(_build_)_LIB_DIR)/$(_lprefix_)my_lib_lib$(_lib_ext_) \
- ##
-$(_build_)_$(_curr_)_lib_libs=
-
 ##
  # Target Library
- # e.g: $(_build_)_$(_curr_)_lib_name=my_lib_name
+ # e.g: $(_flavor_)_$(_feat_)_lib=my_lib_name
  ##
-$(_build_)_$(_curr_)_lib_name=gtest_main
-
-#=======================================================================================#
-# BIN REQUISITES
-#=======================================================================================#
-
-##
- # Object Requisites
- # e.g: $(_build_)_$(_curr_)_bin_objs=$($(_build_)_OBJ_DIR)/my_bin_obj$(_obj_ext_) \
- ##
-$(_build_)_$(_curr_)_bin_objs=
-
-##
- # Library Requisites
- # e.g: $(_build_)_$(_curr_)_bin_libs=$($(_build_)_LIB_DIR)/$(_lprefix_)my_bin_lib$(_lib_ext_) \
- ##
-$(_build_)_$(_curr_)_bin_libs=
-
-##
- # Target Binary
- # e.g: $(_build_)_$(_curr_)_bin_name=my_bin_name
- ##
-$(_build_)_$(_curr_)_bin_name=
+$(_flavor_)_$(_feat_)_lib=gtest_main
+$(_flavor_)_$(_feat_)_ovr_lib_tar=yes
 #=======================================================================================#
 # END PACKAGE RULE
 #=======================================================================================#
@@ -72,44 +29,41 @@ endef
 #=======================================================================================#
 # LOCAL DEFINES 
 #=======================================================================================#
-#all : $($(_build_)_GTEST_TARG_INC) $($(_build_)_LIB_DIR)/lib$($(_build_)_lib_name).a 
+#all : $($(_flavor_)_GTEST_TARG_INC) $($(_flavor_)_LIB_DIR)/lib$($(_flavor_)_lib_name).a 
 #
-define $(_build_)_$(_curr_)_LIB_NAME_MAKE
+define $(_flavor_)_$(_feat_)_LIB_NAME_MAKE
 
-$(_build_)_clean+=$($(_build)_GTEST_PATH)/make/*.a 
-$(_build_)_clean+=$($(_build)_GTEST_PATH)/make/*.o
-$(_build_)_clean+=$($(_build)_GTEST_PATH)/make/*.exe
+$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.a 
+$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.o
+$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.exe
 
-$($(_build_)_LIB_DIR)/$(addprefix $(_lprefix_), $(addsuffix $(_lib_ext_), $($(_build_)_$(_curr_)_lib_name) )) : \
-$($(_build)_GTEST_PATH)/make/$(addsuffix $(_lib_ext_), $($(_build_)_$(_curr_)_lib_name) ) $($(_build_)_LIB_DIR)
-	cd $($(_build_)_LIB_DIR)
-	cp -sf $(realpath .)/$$< $$@;
+$($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_LIB_DIR)/lib%.a) : \
+$($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_GTEST_PATH)/make/%.a) $($(_flavor_)_LIB_DIR)
+	-cp -Pf $$< $$@;
 
-$($(_build)_GTEST_PATH)/make/$(addsuffix $(_lib_ext_), $($(_build_)_$(_curr_)_lib_name) ) : 
-	$(MAKE) gtest_main.a -C $($(_build)_GTEST_PATH)/make/;
+endef
+
+define LIB_GTEST_MAIN
+$($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_GTEST_PATH)/make/%.a) : 
+	$(MAKE) $($(_flavor_)_$(_feat_)_lib:=.a) -C $($(_flavor_)_GTEST_PATH)/make/;
 endef
 #=======================================================================================#
 # LOCAL DEFINE EXPANSIONS
 #=======================================================================================#
-$(eval \
-   $(call INFO_VERBOSE_template, \
-      $($(_build_)_$(_curr_)_MAKE) \
-   )\
-)
+$(eval $(call Verbose,$(call $(_flavor_)_$(_feat_)_MAKE)))
 
 #=======================================================================================#
 # LOCAL RULES EXPANSIONS
 #=======================================================================================#
-
-$(eval \
-   $(call INFO_VERBOSE_template, \
-      $($(_build_)_$(_curr_)_LIB_NAME_MAKE) \
-   )\
-)
+$(eval $(call Verbose,$(call $(_flavor_)_$(_feat_)_LIB_NAME_MAKE)))
 
 #=======================================================================================#
 # INCLUDE PK PROJECT UTILITY
 #=======================================================================================#
+ifndef Gtest_Main_Def
+$(eval $(call Verbose,$(call LIB_GTEST_MAIN)))
+Gtest_Main_Def=yes
+endif
 
 #=======================================================================================#
 # api_makefile.mk
