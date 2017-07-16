@@ -16,7 +16,7 @@ define $(_flavor_)_$(_feat_)_MAKE
  # Target Library
  # e.g: $(_flavor_)_$(_feat_)_lib=my_lib_name
  ##
-$(_flavor_)_$(_feat_)_lib=gtest_main
+$(_flavor_)_$(_feat_)_lib=gtest
 $(_flavor_)_$(_feat_)_ovr_lib_tar=yes
 #=======================================================================================#
 # END PACKAGE RULE
