@@ -16,8 +16,11 @@ define $(_flavor_)_$(_feat_)_MAKE
  # Target Library
  # e.g: $(_flavor_)_$(_feat_)_lib=my_lib_name
  ##
-$(_flavor_)_$(_feat_)_lib=gtest
+$(_flavor_)_$(_feat_)_lib=gtest_main
 $(_flavor_)_$(_feat_)_ovr_lib_tar=yes
+ifndef $(_flavor_)_GTEST_PATH
+$(_flavor_)_GTEST_PATH=$($(_flavor_)_$(_feat_)_dir)/googletest/googletest
+endif
 #=======================================================================================#
 # END PACKAGE RULE
 #=======================================================================================#
@@ -32,6 +35,7 @@ endef
 #all : $($(_flavor_)_GTEST_TARG_INC) $($(_flavor_)_LIB_DIR)/lib$($(_flavor_)_lib_name).a 
 #
 define $(_flavor_)_$(_feat_)_LIB_NAME_MAKE
+$(_flavor_)_PROJ_INC+=$($(_flavor_)_GTEST_PATH)/include
 
 $(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.a 
 $(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.o
@@ -44,6 +48,7 @@ $($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_GTEST_PATH)/make/%.a) $($(_flavor_)_
 endef
 
 define LIB_GTEST_MAIN
+
 $($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_GTEST_PATH)/make/%.a) : 
 	$(MAKE) $($(_flavor_)_$(_feat_)_lib:=.a) -C $($(_flavor_)_GTEST_PATH)/make/;
 endef
