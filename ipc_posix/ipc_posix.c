@@ -15,7 +15,16 @@
 #include "ipc_posix.h"
 #include "ipc.h"
 
-#define THREAD_INIT(tid, desc) -1,
+#define THREAD_INIT(tid, desc) ((pthread_t)-1),
+
+#ifdef __CYGWIN__
+struct Cyg_Mutex
+{
+  bool locked;
+  pthread_mutex_t mux;
+  pthread_cond_t cond;
+};
+#endif
 static void * ipc_posix_routine(void * thread);
 static void ipc_posix_delete(struct Object * const obj);
 
@@ -86,7 +95,7 @@ static pthread_mutexattr_t POSIX_Mux_Attr;
 
 static pthread_t POSIX_Pool[IPC_MAX_TID] =
     {
-   -1,
+   (pthread_t) -1,
    IPC_THREAD_LIST(THREAD_INIT)
     };
 
@@ -119,7 +128,7 @@ void ipc_posix_delete(struct Object * const obj)
 
   for(i = 0; i < IPC_MAX_MID; ++i)
     {
-      if( -1 != POSIX_Pool[i])
+      if( ((pthread_t)-1) != POSIX_Pool[i])
    {
      union Thread * thread = IPC_Helper_find_thread(i);
      if(thread)
@@ -218,14 +227,28 @@ bool ipc_posix_join_thread(union IPC_Helper * const helper, union Thread * const
   return rc;
 }
 
+#ifndef __CYGWIN__
 bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
 {
-  return 0 == pthread_mutex_init((pthread_mutex_t *)&mutex->mux, &POSIX_Mux_Attr);
+  if(NULL == mutex->mux)
+  {
+    pthread_mutex_t * const mux = malloc(sizeof(pthread_mutex_t));
+    mutex->mux = mux;
+    pthread_mutex_init(mux, &POSIX_Mux_Attr);
+  }
+  return NULL != mutex->mux;
 }
 
 bool ipc_posix_free_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
 {
-  return 0 == pthread_mutex_destroy((pthread_mutex_t *)&mutex->mux);
+  if(NULL != mutex->mux)
+  {
+    pthread_mutex_t * const mux = mutex->mux;
+    pthread_mutex_destroy(mux);
+    free(mux);
+    mutex->mux = NULL;
+  }
+  return NULL == mutex->mux;
 }
 
 bool ipc_posix_lock_mutex(union IPC_Helper * const helper, union Mutex * const mutex,
@@ -242,6 +265,63 @@ bool ipc_posix_unlock_mutex(union IPC_Helper * const helper, union Mutex * const
 {
   return 0 == pthread_mutex_unlock((pthread_mutex_t *)&mutex->mux);
 }
+#else
+bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
+{
+  if(NULL == mutex->mux)
+  {
+    struct Cyg_Mutex * const cyg_mux = malloc(sizeof(struct Cyg_Mutex));
+    mutex->mux = cyg_mux;
+    cyg_mux->locked = false;
+    pthread_mutex_init(&cyg_mux->mux, &POSIX_Mux_Attr);
+    pthread_cond_init(&cyg_mux->cond, &POSIX_Cond_Attr);
+  } 
+  return NULL != mutex->mux;
+}
+
+bool ipc_posix_free_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
+{
+  if(NULL == mutex->mux)
+  {
+    struct Cyg_Mutex * const cyg_mux = (struct Cyg_Mutex *) mutex->mux;
+    pthread_mutex_destroy(&cyg_mux->mux);
+    pthread_cond_destroy(&cyg_mux->cond);
+    free(cyg_mux);
+    mutex->mux = NULL;
+  }
+  return NULL == mutex->mux;
+}
+
+bool ipc_posix_lock_mutex(union IPC_Helper * const helper, union Mutex * const mutex,
+           IPC_Clock_T const wait_ms)
+{
+  struct timespec timespec;
+  ipc_posix_make_timespec(&timespec, wait_ms);
+  struct Cyg_Mutex * const cyg_mux = (struct Cyg_Mutex *) mutex->mux;
+  Isnt_Nullptr(cyg_mux, false);
+
+  pthread_mutex_lock(&cyg_mux->mux);
+  while(cyg_mux->locked)
+  {
+    int rc = pthread_cond_timedwait(&cyg_mux->cond, &cyg_mux->mux, &timespec);
+    if (rc < 0) return false;
+  }
+  cyg_mux->locked = true;
+  return 0 == pthread_mutex_unlock(&cyg_mux->mux);
+}
+
+bool ipc_posix_unlock_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
+{
+  struct Cyg_Mutex * const cyg_mux = (struct Cyg_Mutex *) mutex->mux;
+  Isnt_Nullptr(cyg_mux, false);
+
+  pthread_mutex_lock(&cyg_mux->mux);
+  cyg_mux->locked = false;
+  pthread_cond_signal(&cyg_mux->cond);
+  return 0 == pthread_mutex_unlock(&cyg_mux->mux);
+}
+
+#endif
 
 bool ipc_posix_alloc_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore,
                 uint8_t const value)
