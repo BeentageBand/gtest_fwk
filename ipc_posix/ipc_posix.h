@@ -10,6 +10,9 @@
 
 #include "ipc_helper.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef union IPC_Helper_Class IPC_POSIX_Class_T;
 
 typedef union IPC_POSIX
@@ -26,4 +29,7 @@ extern IPC_POSIX_Class_T IPC_POSIX_Class;
 
 extern void Populate_IPC_POSIX(union IPC_POSIX * const posix);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* IPC_POSIX_H_ */
