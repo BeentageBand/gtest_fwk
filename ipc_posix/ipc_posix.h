@@ -19,10 +19,7 @@ typedef union IPC_POSIX
 {
   IPC_POSIX_Class_T _private * _private vtbl;
   struct Object Object;
-  struct
-  {
-    union IPC_Helper IPC_Helper;
-  };
+  union IPC_Helper IPC_Helper;
 }IPC_POSIX_T;
 
 extern IPC_POSIX_Class_T IPC_POSIX_Class;

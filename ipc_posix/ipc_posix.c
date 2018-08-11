@@ -393,6 +393,7 @@ void Populate_IPC_POSIX(union IPC_POSIX * const this)
       pthread_condattr_init(&POSIX_Cond_Attr);
       pthread_attr_init(&POSIX_Thread_Attr);
       pthread_mutexattr_init(&POSIX_Mux_Attr);
+      IPC_POSIX.vtbl->alloc_mutex(&IPC_POSIX, IPC_POSIX.IPC_Helper.single_mux);
     }
   memcpy(this, &IPC_POSIX, sizeof(IPC_POSIX));
 }
