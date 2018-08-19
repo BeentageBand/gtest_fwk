@@ -8,6 +8,7 @@
 #ifndef IPC_POSIX_H_
 #define IPC_POSIX_H_
 
+#include <time.h>
 #include "ipc_helper.h"
 
 #ifdef __cplusplus
@@ -25,6 +26,11 @@ typedef union IPC_POSIX
 extern IPC_POSIX_Class_T IPC_POSIX_Class;
 
 extern void Populate_IPC_POSIX(union IPC_POSIX * const posix);
+
+extern IPC_TID_T ipc_posix_self_thread(union IPC_Helper * const helper);
+
+extern void ipc_posix_make_timespec(struct timespec * const tm, IPC_Clock_T const clock_ms);
+extern  IPC_Clock_T ipc_posix_make_clock(struct timespec * const tm);
 
 #ifdef __cplusplus
 }

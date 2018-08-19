@@ -9,23 +9,11 @@
 #define Dbg_FID DBG_FID_DEF(IPC_FID, 4)
 
 #include <pthread.h>
-#include <semaphore.h>
 #include <time.h>
 #include "dbg_log.h"
 #include "ipc_posix.h"
 #include "ipc.h"
 
-#define THREAD_INIT(tid, desc) ((pthread_t)-1),
-
-#ifdef __CYGWIN__
-struct Cyg_Mutex
-{
-  bool locked;
-  pthread_mutex_t mux;
-  pthread_cond_t cond;
-};
-#endif
-static void * ipc_posix_routine(void * thread);
 static void ipc_posix_delete(struct Object * const obj);
 
 static IPC_Clock_T ipc_posix_time(union IPC_Helper * const helper);
@@ -34,30 +22,11 @@ static bool ipc_posix_is_time_elapsed(union IPC_Helper * const helper, IPC_Clock
 
 static IPC_TID_T ipc_posix_self_thread(union IPC_Helper * const helper);
 static bool ipc_posix_alloc_thread(union IPC_Helper * const helper, union Thread * const thread);
-static bool ipc_posix_free_thread(union IPC_Helper * const helper, union Thread * const thread);
-static bool ipc_posix_run_thread(union IPC_Helper * const helper, union Thread * const thread);
-static bool ipc_posix_join_thread(union IPC_Helper * const helper, union Thread * const thread);
-
 static bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const mutex);
-static bool ipc_posix_free_mutex(union IPC_Helper * const helper, union Mutex * const mutex);
-static bool ipc_posix_lock_mutex(union IPC_Helper * const helper, union Mutex * const mutex,
-             IPC_Clock_T const wait_ms);
-static bool ipc_posix_unlock_mutex(union IPC_Helper * const helper, union Mutex * const mutex);
-
 static bool ipc_posix_alloc_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore,
                   uint8_t const value);
-static bool ipc_posix_free_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore);
-static bool ipc_posix_wait_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore,
-                 IPC_Clock_T const wait_ms);
-static bool ipc_posix_post_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore);
-
 static bool ipc_posix_alloc_conditional(union IPC_Helper * const helper, union Conditional * const conditional);
-static bool ipc_posix_free_conditional(union IPC_Helper * const helper, union Conditional * const conditional);
-static bool ipc_posix_wait_conditional(union IPC_Helper * const helper, union Conditional * const conditional,
-                   union Mutex * const mutex, IPC_Clock_T const wait_ms);
-static bool ipc_posix_post_conditional(union IPC_Helper * const helper, union Conditional * const conditional);
-
-static void ipc_posix_make_timespec(struct timespec * const tm, IPC_Clock_T const clock_ms);
+static bool ipc_posix_alloc_timer(union IPC_Helper * const helper, union Timer * const timer);
 
 IPC_POSIX_Class_T IPC_POSIX_Class =
     {{
@@ -65,84 +34,21 @@ IPC_POSIX_Class_T IPC_POSIX_Class =
    ipc_posix_time,
    ipc_posix_sleep,
    ipc_posix_is_time_elapsed,
-
    ipc_posix_self_thread,
+
    ipc_posix_alloc_thread,
-   ipc_posix_free_thread,
-   ipc_posix_run_thread,
-   ipc_posix_join_thread,
-
+   ipc_posix_alloc_mailbox,
    ipc_posix_alloc_mutex,
-   ipc_posix_free_mutex,
-   ipc_posix_lock_mutex,
-   ipc_posix_unlock_mutex,
-
    ipc_posix_alloc_semaphore,
-   ipc_posix_free_semaphore,
-   ipc_posix_wait_semaphore,
-   ipc_posix_post_semaphore,
-
    ipc_posix_alloc_conditional,
-   ipc_posix_free_conditional,
-   ipc_posix_wait_conditional,
-   ipc_posix_post_conditional
+   ipc_posix_alloc_timer
     }};
 
 static union IPC_POSIX IPC_POSIX = {NULL};
 static pthread_condattr_t POSIX_Cond_Attr = PTHREAD_COND_INITIALIZER;
-static pthread_attr_t POSIX_Thread_Attr;
-static pthread_mutexattr_t POSIX_Mux_Attr;
-
-static pthread_t POSIX_Pool[IPC_MAX_TID] =
-    {
-   (pthread_t) -1,
-   IPC_THREAD_LIST(THREAD_INIT)
-    };
-
-void * ipc_posix_routine(void * thread)
-{
-   union Thread * const this = _cast(Thread, (union Thread *)thread);
-
-   Isnt_Nullptr(this, NULL);
-
-   Dbg_Info("%s for thread = %d", __func__, this->tid);
-
-   if(this->vtbl && this->vtbl->runnable)
-   {
-      this->vtbl->runnable(this);
-   }
-   else
-   {
-      Dbg_Fault("%s:Unable to run thread %d", __func__, this->tid);
-   }
-
-   union Semaphore * t_sem = &this->sem_ready;
-   t_sem->vtbl->post(t_sem);// thread ended wait
-   pthread_exit(NULL);
-   return NULL;
-}
 
 void ipc_posix_delete(struct Object * const obj)
-{
-  IPC_TID_T i;
-
-  for(i = 0; i < IPC_MAX_MID; ++i)
-    {
-      if( ((pthread_t)-1) != POSIX_Pool[i])
-   {
-     union Thread * thread = IPC_Helper_find_thread(i);
-     if(thread)
-       {
-         _delete(thread);
-       }
-   }
-    }
-
-  pthread_condattr_destroy(&POSIX_Cond_Attr);
-  pthread_attr_destroy(&POSIX_Thread_Attr);
-  pthread_mutexattr_destroy(&POSIX_Mux_Attr);
-
-}
+{}
 
 IPC_Clock_T ipc_posix_time(union IPC_Helper * const helper)
 {
@@ -153,225 +59,58 @@ IPC_Clock_T ipc_posix_time(union IPC_Helper * const helper)
 
 void ipc_posix_sleep(union IPC_Helper * const helper, IPC_Clock_T const sleep_ms)
 {
-  usleep(sleep_ms * 1000);
-}
-
-bool ipc_posix_is_time_elapsed(union IPC_Helper * const helper, IPC_Clock_T const time_ms)
-{
-  return (time_ms < helper->vtbl->time(helper));
-}
-
-IPC_TID_T ipc_posix_self_thread(union IPC_Helper * const helper)
-{
-  IPC_TID_T i;
-  pthread_t self = pthread_self();
-
-  for(i = 0; i < IPC_MAX_TID; ++i)
-    {
-      if( pthread_equal(POSIX_Pool[i], self))
-   {
-     break;
-   }
-    }
-
-  return i;
+  struct timespec sleep_ts;
+  ipc_posix_make_timespec(&sleep_ts, sleep_ms);
+  nanosleep(&sleep_ts);
 }
 
 bool ipc_posix_alloc_thread(union IPC_Helper * const helper, union Thread * const thread)
 {
   bool rc = true;
-
-  if(-1 == POSIX_Pool[thread->tid])
-    {
-      rc = true;
-      thread->attr = &POSIX_Thread_Attr;
-      IPC_Register_Thread(thread);
-    }
+  union POSIX_Thread * const posix_thread = (union POSIX_Thread *)malloc(sizeof(union POSIX_Thread));
+  Isnt_Nullptr(posix_thread, );
+  Populate_POSIX_Thread(posix_thread);
+  thread->cbk = &posix_thread->Thread_Cbk;
   return rc;
 }
 
-bool ipc_posix_free_thread(union IPC_Helper * const helper, union Thread * const thread)
-{
-  bool rc = false;
-
-  if(0 == pthread_cancel(POSIX_Pool[thread->tid]))
-    {
-      POSIX_Pool[thread->tid] = -1;
-    }
-  return rc;
-}
-
-bool ipc_posix_run_thread(union IPC_Helper * const helper, union Thread * const thread)
-{
-  bool rc = false;
-  if(-1 == POSIX_Pool[thread->tid])
-    {
-      rc = 0 == pthread_create(POSIX_Pool + thread->tid,
-                (pthread_attr_t *)thread->attr,
-                ipc_posix_routine, (void *)thread);
-    }
-  return rc;
-}
-
-bool ipc_posix_join_thread(union IPC_Helper * const helper, union Thread * const thread)
-{
-  bool rc = false;
-
-  if(-1 == POSIX_Pool[thread->tid])
-    {
-      union Thread * t = NULL;
-      rc = 0 == pthread_join(POSIX_Pool[thread->tid],
-              (void **) &t);
-    }
-
-  return rc;
-}
 
 #ifndef __CYGWIN__
 bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
 {
-  if(NULL == mutex->mux)
-  {
-    pthread_mutex_t * const mux = malloc(sizeof(pthread_mutex_t));
-    mutex->mux = mux;
-    pthread_mutex_init(mux, &POSIX_Mux_Attr);
-  }
-  return NULL != mutex->mux;
+  union POSIX_Mutex * const posix_mux = (union POSIX_Mutex *)malloc(sizeof(union POSIX_Mutex));
+  Populate_POSIX_Mutex(posix_mux);
+  mutex->cbk = posix_mux;
+  return NULL != mutex->cbk;
 }
 
-bool ipc_posix_free_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
-{
-  if(NULL != mutex->mux)
-  {
-    pthread_mutex_t * const mux = mutex->mux;
-    pthread_mutex_destroy(mux);
-    free(mux);
-    mutex->mux = NULL;
-  }
-  return NULL == mutex->mux;
-}
-
-bool ipc_posix_lock_mutex(union IPC_Helper * const helper, union Mutex * const mutex,
-           IPC_Clock_T const wait_ms)
-{
-  struct timespec timespec;
-  ipc_posix_make_timespec(&timespec, wait_ms);
-
-  return 0 == pthread_mutex_timedlock((pthread_mutex_t *)&mutex->mux,
-                  &timespec);
-}
-
-bool ipc_posix_unlock_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
-{
-  return 0 == pthread_mutex_unlock((pthread_mutex_t *)&mutex->mux);
-}
 #else
 bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
 {
-  if(NULL == mutex->mux)
-  {
-    struct Cyg_Mutex * const cyg_mux = malloc(sizeof(struct Cyg_Mutex));
-    mutex->mux = cyg_mux;
-    cyg_mux->locked = false;
-    pthread_mutex_init(&cyg_mux->mux, &POSIX_Mux_Attr);
-    pthread_cond_init(&cyg_mux->cond, &POSIX_Cond_Attr);
-  } 
-  return NULL != mutex->mux;
-}
-
-bool ipc_posix_free_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
-{
-  if(NULL == mutex->mux)
-  {
-    struct Cyg_Mutex * const cyg_mux = (struct Cyg_Mutex *) mutex->mux;
-    pthread_mutex_destroy(&cyg_mux->mux);
-    pthread_cond_destroy(&cyg_mux->cond);
-    free(cyg_mux);
-    mutex->mux = NULL;
-  }
-  return NULL == mutex->mux;
-}
-
-bool ipc_posix_lock_mutex(union IPC_Helper * const helper, union Mutex * const mutex,
-           IPC_Clock_T const wait_ms)
-{
-  struct timespec timespec;
-  ipc_posix_make_timespec(&timespec, wait_ms);
-  struct Cyg_Mutex * const cyg_mux = (struct Cyg_Mutex *) mutex->mux;
-  Isnt_Nullptr(cyg_mux, false);
-
-  pthread_mutex_lock(&cyg_mux->mux);
-  while(cyg_mux->locked)
-  {
-    int rc = pthread_cond_timedwait(&cyg_mux->cond, &cyg_mux->mux, &timespec);
-    if (rc < 0) return false;
-  }
-  cyg_mux->locked = true;
-  return 0 == pthread_mutex_unlock(&cyg_mux->mux);
-}
-
-bool ipc_posix_unlock_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
-{
-  struct Cyg_Mutex * const cyg_mux = (struct Cyg_Mutex *) mutex->mux;
-  Isnt_Nullptr(cyg_mux, false);
-
-  pthread_mutex_lock(&cyg_mux->mux);
-  cyg_mux->locked = false;
-  pthread_cond_signal(&cyg_mux->cond);
-  return 0 == pthread_mutex_unlock(&cyg_mux->mux);
+  union Cygwin_Mutex * const cygwin_mux = (union Cygwin_Mutex *)malloc(sizeof(union Cygwin_Mutex));
+  Populate_Cygwin_Mutex(cygwin_mux);
+  mutex->cbk = cygwin_mux;
+  return NULL != mutex->cbk; 
 }
 
 #endif
 
-bool ipc_posix_alloc_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore,
-                uint8_t const value)
-{
-  return 0 == sem_init((sem_t *)&semaphore->sem, 0, value);
-}
-
-bool ipc_posix_free_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore)
-{
-  return 0 == sem_destroy((sem_t *)&semaphore->sem);
-}
-
-bool ipc_posix_wait_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore,
-               IPC_Clock_T const wait_ms)
-{
-  struct timespec timespec;
-  ipc_posix_make_timespec(&timespec, wait_ms);
-  return 0 == sem_timedwait((sem_t *)&semaphore->sem, &timespec);
-}
-
-bool ipc_posix_post_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore)
-{
-  return 0 == sem_post((sem_t *)&semaphore->sem);
-}
-
 bool ipc_posix_alloc_conditional(union IPC_Helper * const helper, union Conditional * const conditional)
 {
-  return 0 == pthread_cond_init((pthread_cond_t *)&conditional->conditional,
-            &POSIX_Cond_Attr);
+  union POSIX_Conditional * const posix_cv = (union POSIX_Conditional *)malloc(sizeof(union POSIX_Conditional));
+  Isnt_Nullptr(posix_cv, false);
+  Populate_POSIX_Conditional(posix_cv);
+  conditional->cbk = posix_cv;
+  return NULL != conditional->cbk;
 }
 
-bool ipc_posix_free_conditional(union IPC_Helper * const helper, union Conditional * const conditional)
+bool ipc_posix_alloc_timer(union IPC_Helper * const helper, union Timer * const timer)
 {
-  return 0 == pthread_cond_destroy((pthread_cond_t *)&conditional->conditional);
-}
-
-bool ipc_posix_wait_conditional(union IPC_Helper * const helper, union Conditional * const conditional,
-            union Mutex * const mutex, IPC_Clock_T const wait_ms)
-{
-  struct timespec timespec;
-  ipc_posix_make_timespec(&timespec, wait_ms);
-  return 0 == pthread_cond_timedwait((pthread_cond_t *)&conditional->conditional,
-                 (pthread_mutex_t *)&mutex->mux, &timespec);
-}
-
-bool ipc_posix_post_conditional(union IPC_Helper * const helper, union Conditional * const conditional)
-{
-  union IPC_POSIX * const this = _cast(IPC_POSIX, helper);
-  Isnt_Nullptr(this, false);
-  return 0 == pthread_cond_signal((pthread_cond_t *)&conditional->conditional);
+  union POSIX_Timer * const posix_timer = (union POSIX_Timer *)malloc(sizeof(union POSIX_Timer));
+  Isnt_Nullptr(posix_timer, false);
+  Populate_POSIX_Timer(posix_timer);
+  timer->cbk = posix_timer;
+  return NULL != timer->cbk;
 }
 
 void ipc_posix_make_timespec(struct timespec * const tm, IPC_Clock_T const clock_ms)
@@ -381,19 +120,20 @@ void ipc_posix_make_timespec(struct timespec * const tm, IPC_Clock_T const clock
   tm->tv_nsec *= 1000000;
 }
 
+IPC_Clock_T ipc_posix_make_clock(struct timespec * const tm)
+{
+  return (IPC_Clock_T)(tm->tv_nsec / 1000000) + (IPC_Clock_T)(tm->tv_sec * 1000);
+}
+
 void Populate_IPC_POSIX(union IPC_POSIX * const this)
 {
-
   if(NULL == IPC_POSIX.vtbl)
     {
       POSIX_Pool[IPC_MAIN_TID] = pthread_self();
       Dbg_Warn("Start IPC POSIX: starter thread %d is IPC_MAIN_TID", POSIX_Pool[IPC_MAIN_TID]);
       Populate_IPC_Helper(&IPC_POSIX.IPC_Helper);
       Object_Init(&IPC_POSIX.Object, &IPC_POSIX_Class.Class, 0);
-      pthread_condattr_init(&POSIX_Cond_Attr);
-      pthread_attr_init(&POSIX_Thread_Attr);
-      pthread_mutexattr_init(&POSIX_Mux_Attr);
       IPC_POSIX.vtbl->alloc_mutex(&IPC_POSIX, IPC_POSIX.IPC_Helper.single_mux);
     }
-  memcpy(this, &IPC_POSIX, sizeof(IPC_POSIX));
+    _clone(this, IPC_POSIX);
 }
