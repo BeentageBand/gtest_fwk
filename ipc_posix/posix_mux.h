@@ -4,9 +4,13 @@
 #include <pthread.h>
 #include "mutex.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef union POSIX_Mutex
 {
-    struct POSIX_Mutex_Class _private * _private vtbl;
+    union POSIX_Mutex_Class _private * _private vtbl;
     struct
     {
         union Mutex_Cbk Mutex_Cbk;
@@ -17,7 +21,7 @@ typedef union POSIX_Mutex
 
 typedef union Cygwin_Mutex
 {
-    struct Cygwin_Mutex_Class _private * _private vtbl;
+    union Cygwin_Mutex_Class _private * _private vtbl;
     struct
     {
         union Mutex_Cbk Mutex_Cbk;
@@ -46,4 +50,7 @@ extern union Cygwin_Mutex_Class _private Cygwin_Mutex_Class;
 extern void Populate_POSIX_Mutex(union POSIX_Mutex * const cbk);
 extern void Populate_Cygwin_Mutex(union Cygwin_Mutex * const cbk);;
 
+#ifdef __cplusplus
+}
+#endif
 #endif /*POSIX_MUX_H_*/

@@ -6,12 +6,12 @@
 
 typedef union POSIX_Semaphore
 {
-    struct POSIX_Semaphore_Class _private * _private vtbl;
+    union POSIX_Semaphore_Class _private * _private vtbl;
     struct
     {
         union Semaphore_Cbk Semaphore_Cbk;
         sem_t sem;
-    }
+    };
     struct Object Object;
 }POSIX_Semaphore_T;
 

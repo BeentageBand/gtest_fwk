@@ -3,8 +3,8 @@
 #include "posix_tmr.h"
 
 static void posix_timer_delete(struct Object * const obj);
-static bool posix_timer_wait(union POSIX_Timer * const, union Timer * const, IPC_Clock_T const wait_ms);
-static bool posix_timer_post(union POSIX_Timer * const, union Timer * const);
+static bool posix_timer_wait(union Timer_Cbk * const, union Timer * const, IPC_Clock_T const wait_ms);
+static bool posix_timer_post(union Timer_Cbk * const, union Timer * const);
 
 static union POSIX_Timer POSIX_Timer = {NULL};
 
@@ -22,15 +22,19 @@ void posix_timer_delete(struct Object * const obj)
     tmr_destroy(&this->tmr);
 }
 
-bool posix_timer_wait(union POSIX_Timer * const this, union Timer * const timer, IPC_Clock_T const wait_ms)
+bool posix_timer_wait(union Timer_Cbk * const cbk, union Timer * const timer, IPC_Clock_T const wait_ms)
 {
+    union POSIX_Timer * const this = _cast(POSIX_Timer, cbk);
+    Isnt_Nullptr(this, false);
     struct timespec wait_ts;
     ipc_posix_make_timespec(&wait_ts, wait_ms);
     return 0 == tmr_timedwait(&this->tmr, &wait_ts);
 }
 
-bool posix_timer_post(union POSIX_Timer * const this, union Timer * const tmr)
+bool posix_timer_post(union Timer_Cbk * const cbk, union Timer * const tmr)
 {
+    union POSIX_Timer * const this = _cast(POSIX_Timer, cbk);
+    Isnt_Nullptr(this, false);
     return 0 == tmr_post(&this->tmr);
 }
 
@@ -44,5 +48,4 @@ void Populate_POSIX_Timer(union POSIX_Timer * const this)
                     sizeof(POSIX_Timer_Class.Timer_Cbk));
     }
     _clone(this, POSIX_Timer);
-    
 }

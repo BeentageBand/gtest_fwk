@@ -9,7 +9,7 @@ extern "C" {
 
 typedef union POSIX_Mailbox
 {
-      struct POSIX_Mailbox_Class _private * _private vtbl;
+      union POSIX_Mailbox_Class _private * _private vtbl;
       union Mailbox_Cbk Mailbox_Cbk;
       struct Object Object;
 }POSIX_Mailbox_T;
@@ -20,7 +20,7 @@ typedef union POSIX_Mailbox_Class
       struct Mailbox_Cbk_Class Mailbox_Cbk;
 }POSIX_Mailbox_Class_T;
 
-extern struct POSIX_Mailbox_Class _private POSIX_Mailbox_Class;
+extern union POSIX_Mailbox_Class _private POSIX_Mailbox_Class;
 
 extern void Populate_POSIX_Mailbox(union POSIX_Mailbox * const cbk);
 

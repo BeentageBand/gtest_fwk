@@ -20,7 +20,7 @@ union POSIX_Mutex_Class POSIX_Mutex_Class =
     }
 };
 
-union Cygwin_Mutex_Class Cygwin_Mutex_Class ==
+union Cygwin_Mutex_Class Cygwin_Mutex_Class =
 {
     {
         {cygwin_mutex_delete, NULL},
@@ -40,55 +40,61 @@ void posix_mutex_delete(struct Object * const obj)
 {
     union POSIX_Mutex * const this = (union POSIX_Mutex *)Object_Cast(&POSIX_Mutex_Class, obj);
     Isnt_Nullptr(this, );
-    pthread_mutex_destroy(this->mux);
+    pthread_mutex_destroy(&this->mux);
 }
 
-bool posix_mutex_lock(union Mutex_Cbk * const this, union Mutex * const mux, IPC_Clock_T const wait_ms)
+bool posix_mutex_lock(union Mutex_Cbk * const cbk, union Mutex * const mux, IPC_Clock_T const wait_ms)
 {
 #ifndef __CYGWIN__
+    union POSIX_Mutex * const this = _cast(POSIX_Mutes, cbk);
+    Isnt_Nullptr(this, false);
     struct timespec wait_ts;
     ipc_posix_make_timespec(&wait_ts, wait_ms);
-    return 0 == pthread_timedlock(this->mux, &wait_ts);
+    return 0 == pthread_timedlock(&this->mux, &wait_ts);
 #else
     return false;
 #endif
 }
 
-bool posix_mutex_unlock(union Mutex_Cbk * const this, union Mutex * const mux)
+bool posix_mutex_unlock(union Mutex_Cbk * const cbk, union Mutex * const mux)
 {
-    struct timespec wait_ts;
-    ipc_posix_make_timespec(&wait_ts, wait_ms);
-    return 0 == pthread_mutex_unlock(this->mux);
+    union POSIX_Mutex * const this = _cast(POSIX_Mutex, cbk);
+    Isnt_Nullptr(this, false);
+    return 0 == pthread_mutex_unlock(&this->mux);
 }
 
 void cygwin_mutex_delete(struct Object * const obj)
 {
-    union Cygwin_Mutex * const this = (union Cygwin_Mutex *)Object_Cast(&Cygwin_Mutex_Class, obj););;
+    union Cygwin_Mutex * const this = (union Cygwin_Mutex *)Object_Cast(&Cygwin_Mutex_Class, obj);
     Isnt_Nullptr(this, );
-    pthread_mutex_destroy(this->mux);
-    pthread_cond_destroy(this->cv);
+    pthread_mutex_destroy(&this->mux);
+    pthread_cond_destroy(&this->cv);
 }
 
-bool cygwin_mutex_lock(union Mutex_Cbk * const this, union Mutex * const mutex, IPC_Clock_T const wait_ms)
+bool cygwin_mutex_lock(union Mutex_Cbk * const cbk, union Mutex * const mutex, IPC_Clock_T const wait_ms)
 {
-    if(pthread_mutex_lock(this->mux)) return false;
+    union Cygwin_Mutex * const this = _cast(Cygwin_Mutex, cbk);
+    Isnt_Nullptr(this, false);
+    if(pthread_mutex_lock(&this->mux)) return false;
     struct timespec wait_ts;
     ipc_posix_make_timespec(&wait_ts, wait_ms);
     while(this->is_locked)
     {
-        int rc = pthread_cond_timed_wait(this->cv, this->mux &wait_ts);
+        int rc = pthread_cond_timedwait(&this->cv, &this->mux, &wait_ts);
         if(rc < 0) return false;
     }
     this->is_locked = true;
-    return 0 == pthread_mutex_unlock(this->mux);
+    return 0 == pthread_mutex_unlock(&this->mux);
 }
 
-bool cygwin_mutex_unlock(union Mutex_Cbk * const this, union Mutex * const mutex)
+bool cygwin_mutex_unlock(union Mutex_Cbk * const cbk, union Mutex * const mutex)
 {
-    if(pthread_mutex_lock(this->mux)) return false;
+    union Cygwin_Mutex * const this = _cast(Cygwin_Mutex, cbk);
+    Isnt_Nullptr(this, false);
+    if(pthread_mutex_lock(&this->mux)) return false;
     this->is_locked = false;
-    pthread_cond_signal(this->cv);
-    return 0 == pthread_mutex_unlock(this->mux);
+    pthread_cond_signal(&this->cv);
+    return 0 == pthread_mutex_unlock(&this->mux);
 }
 
 void Populate_POSIX_Mutex(union POSIX_Mutex * const this)
@@ -105,7 +111,7 @@ void Populate_POSIX_Mutex(union POSIX_Mutex * const this)
     pthread_mutex_init(&this->mux, &POSIX_Mux_Attr);
 }
 
-void Populate_Cygwin_Mutex(union Cygwin_Mutex * const this))
+void Populate_Cygwin_Mutex(union Cygwin_Mutex * const this)
 {
     if(NULL == Cygwin_Mutex.vtbl)
     {

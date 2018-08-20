@@ -16,6 +16,7 @@ typedef union POSIX_Thread
         union Thread_Cbk Thread_Cbk;
         pthread_t pthread;
     };
+    struct Object Object;
 }POSIX_Thread_T;
 
 typedef union POSIX_Thread_Class 
@@ -26,7 +27,7 @@ typedef union POSIX_Thread_Class
 
 extern union POSIX_Thread_Class _private POSIX_Thread_Class;
 
-extern void Populate_POSIX_Thread(union Thread_Cbk * const cbk);
+extern void Populate_POSIX_Thread(union POSIX_Thread * const this);
 
 #ifdef __cplusplus
 }

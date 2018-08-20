@@ -4,14 +4,18 @@
 #include <time.h>
 #include "tmr.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef union POSIX_Timer
 {
-    struct POSIX_Timer_Class _private * _private vtbl;
+    union POSIX_Timer_Class _private * _private vtbl;
     struct
     {
         union Timer_Cbk Timer_Cbk;
-        sem_t sem;
-    }
+        timer_t tmr;
+    };
     struct Object Object;
 }POSIX_Timer_T;
 
@@ -24,3 +28,9 @@ typedef union POSIX_Timer_Class
 extern union POSIX_Timer_Class _private POSIX_Timer_Class;
 
 extern void Populate_POSIX_Timer(union POSIX_Timer * const cbk);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /*POSIX_TMR_H_*/

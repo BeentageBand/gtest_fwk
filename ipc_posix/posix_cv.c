@@ -1,10 +1,11 @@
 #define COBJECT_IMPLEMENTATION
+#include "posix_mux.h"
 #include "posix_cv.h"
 
 static void posix_conditional_delete(struct Object * const obj);
-static bool posix_conditional_wait(union POSIX_Conditional * const, union Conditional * const,
+static bool posix_conditional_wait(union Conditional_Cbk * const,
             union Conditional * const, IPC_Clock_T const wait_ms);
-static bool posix_conditional_post(union POSIX_Conditional * const, union Conditional * const);
+static bool posix_conditional_post(union Conditional_Cbk * const, union Conditional * const);
 
 static union POSIX_Conditional POSIX_Conditional = {NULL};
 
@@ -25,20 +26,27 @@ void posix_conditional_delete(struct Object * const obj)
 
     pthread_cond_destroy(&this->cv);
 }
-bool posix_conditional_wait(union POSIX_Conditional * const this,
+bool posix_conditional_wait(union Conditional_Cbk * const cbk,
             union Conditional * const conditional, IPC_Clock_T const wait_ms)
 {
+    union POSIX_Conditional * const this = _cast(POSIX_Conditional, cbk);
+    Isnt_Nullptr(this, false);
+    Isnt_Nullptr(conditional->mutex, false);
+    union POSIX_Mutex * const mux = _cast(POSIX_Mutex, conditional->mutex->cbk);
+    Isnt_Nullptr(mux, false);
     struct timespec wait_ts;
     ipc_posix_make_timespec(&wait_ts, wait_ms);
-    return 0 == pthread_cond_timedwait(&this->cv, &wait_ts);
+    return 0 == pthread_cond_timedwait(&this->cv, mux, &wait_ts);
 }
 
-bool posix_conditional_post(union POSIX_Conditional * const this, union Conditional * const conditional)
+bool posix_conditional_post(union Conditional_Cbk * const cbk, union Conditional * const conditional)
 {
-    return 0 == pthread_cond_signal(&this->cv)
+    union POSIX_Conditional * const this = _cast(POSIX_Conditional, cbk);
+    Isnt_Nullptr(this, false);
+    return 0 == pthread_cond_signal(&this->cv);
 }
 
-void Populate_POSIX_Conditional(union POSIX_Conditional * const conditional)
+void Populate_POSIX_Conditional(union POSIX_Conditional * const this)
 {
     if(NULL == POSIX_Conditional.vtbl)
     {

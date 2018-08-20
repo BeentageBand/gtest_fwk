@@ -4,14 +4,14 @@
 
 static void posix_mailbox_delete(struct Object * const obj);
 
-struct POSIX_Mailbox_Class POSIX_Mailbox_Class  = 
+union POSIX_Mailbox_Class POSIX_Mailbox_Class  = 
 {
     {posix_mailbox_delete, NULL},
     NULL,
     NULL
 };
 
-static union POSIX_Mailbox = {NULL};
+static union POSIX_Mailbox POSIX_Mailbox = {NULL};
 
 void posix_mailbox_delete(struct Object * const obj){}
 

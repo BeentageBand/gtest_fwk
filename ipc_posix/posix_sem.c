@@ -34,7 +34,7 @@ bool posix_semaphore_post(union POSIX_Semaphore * const this, union Semaphore * 
     return 0 == sem_post(&this->sem);
 }
 
-void Populate_POSIX_Semaphore(union POSIX_Semaphore * const this)
+void Populate_POSIX_Semaphore(union POSIX_Semaphore * const this, uint32_t const resources)
 {
     if(NULL == POSIX_Semaphore.vtbl)
     {
@@ -44,5 +44,5 @@ void Populate_POSIX_Semaphore(union POSIX_Semaphore * const this)
                     sizeof(POSIX_Semaphore_Class.Semaphore_Cbk));
     }
     _clone(this, POSIX_Semaphore);
-    sem_init(&this->sem, 0);
+    sem_init(&this->sem, 0, resources);
 }
