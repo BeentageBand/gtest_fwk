@@ -165,5 +165,5 @@ void Populate_POSIX_Thread(union POSIX_Thread * const this)
                     (CSet_Cmp_T)posix_thread_cmp);
     }
     _clone(this, POSIX_Thread);
-    pthread_init(&this->pthread, &POSIX_Thread_Attr);
+	this->pthread  = -1;
 }

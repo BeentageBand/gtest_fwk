@@ -23,7 +23,6 @@ static void ipc_posix_delete(struct Object * const obj);
 
 static IPC_Clock_T ipc_posix_time(union IPC_Helper * const helper);
 static void ipc_posix_sleep(union IPC_Helper * const helper, IPC_Clock_T const sleep_ms);
-static bool ipc_posix_is_time_elapsed(union IPC_Helper * const helper, IPC_Clock_T const time_ms);
 
 static bool ipc_posix_alloc_thread(union IPC_Helper * const helper, union Thread * const thread);
 static bool ipc_posix_alloc_mailbox(union IPC_Helper * const helper, union Mailbox * const mailbox);
@@ -38,7 +37,6 @@ IPC_POSIX_Class_T IPC_POSIX_Class =
    { ipc_posix_delete, NULL},
    ipc_posix_time,
    ipc_posix_sleep,
-   ipc_posix_is_time_elapsed,
    ipc_posix_self_thread,
 
    ipc_posix_alloc_thread,
@@ -111,6 +109,15 @@ bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const 
 
 #endif
 
+bool ipc_posix_alloc_semaphore(union IPC_Helper * const helper, union Semaphore * const semaphore,
+                  uint8_t const value)
+{
+	union POSIX_Semaphore * const posix_sem = (union POSIX_Semaphore *)malloc(sizeof(union POSIX_Semaphore));
+	Isnt_Nullptr(posix_sem, false);
+	Populate_POSIX_Semaphore(posix_sem, value);
+	return NULL != semaphore->cbk;
+}
+
 bool ipc_posix_alloc_conditional(union IPC_Helper * const helper, union Conditional * const conditional)
 {
   union POSIX_Conditional * const posix_cv = (union POSIX_Conditional *)malloc(sizeof(union POSIX_Conditional));
@@ -124,7 +131,7 @@ bool ipc_posix_alloc_timer(union IPC_Helper * const helper, union Timer * const 
 {
   union POSIX_Timer * const posix_timer = (union POSIX_Timer *)malloc(sizeof(union POSIX_Timer));
   Isnt_Nullptr(posix_timer, false);
-  Populate_POSIX_Timer(posix_timer);
+  Populate_POSIX_Timer(posix_timer, timer);
   timer->cbk = posix_timer;
   return NULL != timer->cbk;
 }

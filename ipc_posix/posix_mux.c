@@ -1,5 +1,6 @@
 #define COBJECT_IMPLEMENTATION
-
+#define Dbg_FID IPC_FID, 8
+#include "dbg_log.h"
 #include "ipc_posix.h"
 #include "posix_mux.h"
 
@@ -46,7 +47,7 @@ void posix_mutex_delete(struct Object * const obj)
 bool posix_mutex_lock(union Mutex_Cbk * const cbk, union Mutex * const mux, IPC_Clock_T const wait_ms)
 {
 #ifndef __CYGWIN__
-    union POSIX_Mutex * const this = _cast(POSIX_Mutes, cbk);
+    union POSIX_Mutex * const this = _cast(POSIX_Mutex, cbk);
     Isnt_Nullptr(this, false);
     struct timespec wait_ts;
     ipc_posix_make_timespec(&wait_ts, wait_ms);
