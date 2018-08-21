@@ -26,7 +26,7 @@ void posix_timer_on_tout(int sig, siginfo_t * siginfo, void * params)
 	sigemptyset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL); // block signal mask
 
-	union Timer * const timer = (union Timer *)Object_Cast(&Timer_Class.Class,(struct Object) params);
+	union Timer * const timer = (union Timer *)Object_Cast(&Timer_Class.Class,(struct Object *) params);
 	if(NULL == timer) return; //No dbg log because dbg log is not thread safe.
 	timer->vtbl->on_tout(timer);
 
@@ -37,7 +37,7 @@ void posix_timer_delete(struct Object * const obj)
 {
     union POSIX_Timer * const this = (union POSIX_Timer *)Object_Cast(&POSIX_Timer_Class, obj);
     Isnt_Nullptr(this, );
-    timer_delete(&this->tmr);
+    timer_delete(&this->tmrid);
 }
 
 bool posix_timer_start(union Timer_Cbk * const cbk, union Timer * const timer, IPC_Clock_T const start_ms)
@@ -65,7 +65,7 @@ bool posix_timer_stop(union Timer_Cbk * const cbk, union Timer * const tmr)
     Isnt_Nullptr(this, false);
 	struct itimerspec itimer;
 	memset(&itimer,  0, sizeof(itimer));
-    return 0 == timer_settime(&this->tmr, 0, &itimer, NULL);
+    return 0 == timer_settime(&this->tmrid, 0, &itimer, NULL);
 }
 
 void Populate_POSIX_Timer(union POSIX_Timer * const this, union Timer * const timer)
@@ -83,7 +83,7 @@ void Populate_POSIX_Timer(union POSIX_Timer * const this, union Timer * const ti
 		POSIX_Timer.sigaction.sa_flags = SA_SIGINFO;
 		POSIX_Timer.sigaction.sa_sigaction = posix_timer_on_tout;
 
-		sigemtpyset(&POSIX_Timer.sigaction.sa_mask);
+		sigemptyset(&POSIX_Timer.sigaction.sa_mask);
 		POSIX_Timer.sigevent.sigev_notify = SIGEV_SIGNAL;
 		POSIX_Timer.sigevent.sigev_signo = SIGRTMIN;
     }

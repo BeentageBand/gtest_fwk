@@ -1,4 +1,6 @@
 #define COBJECT_IMPLEMENTATION
+#define Dbg_FID IPC_FID, 10
+#include "dbg_log.h"
 #include "posix_mux.h"
 #include "posix_cv.h"
 
