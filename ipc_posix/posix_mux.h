@@ -44,7 +44,7 @@ typedef union Cygwin_Mutex_Class
     struct Mutex_Cbk_Class Mutex_Cbk;
 }Cygwin_Mutex_Class_T;
 
-extern union POSIX_Mutex_Class _private POSIX_Mutex_Class;s;
+extern union POSIX_Mutex_Class _private POSIX_Mutex_Class;
 extern union Cygwin_Mutex_Class _private Cygwin_Mutex_Class;
 
 extern void Populate_POSIX_Mutex(union POSIX_Mutex * const cbk);

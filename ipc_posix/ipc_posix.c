@@ -48,7 +48,6 @@ IPC_POSIX_Class_T IPC_POSIX_Class =
     }};
 
 static union IPC_POSIX IPC_POSIX = {NULL};
-static pthread_condattr_t POSIX_Cond_Attr = PTHREAD_COND_INITIALIZER;
 
 void ipc_posix_delete(struct Object * const obj)
 {}
@@ -85,7 +84,7 @@ bool ipc_posix_alloc_mailbox(union IPC_Helper * const helper, union Mailbox * co
   Isnt_Nullptr(posix_mbx, false);
   memset(posix_mbx, 0, sizeof(union POSIX_Mailbox));
   Populate_POSIX_Mailbox(posix_mbx);
-  mailbox->cbk = posix_mbx;
+  mailbox->cbk = &posix_mbx->Mailbox_Cbk;
   return rc;
 }
 
@@ -96,7 +95,7 @@ bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const 
   Isnt_Nullptr(posix_mux, false);
   memset(posix_mux, 0, sizeof(union POSIX_Mutex));
   Populate_POSIX_Mutex(posix_mux);
-  mutex->cbk = posix_mux;
+  mutex->cbk = &posix_mux->Mutex_Cbk;
   return NULL != mutex->cbk;
 }
 
@@ -107,7 +106,7 @@ bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const 
   Isnt_Nullptr(cygwin_mux, false);
   memset(cygwin_mux, 0, sizeof(union Cygwin_Mutex));
   Populate_Cygwin_Mutex(cygwin_mux);
-  mutex->cbk = cygwin_mux;
+  mutex->cbk = &cygwin_mux->Mutex_Cbk;
   return NULL != mutex->cbk; 
 }
 
@@ -120,6 +119,7 @@ bool ipc_posix_alloc_semaphore(union IPC_Helper * const helper, union Semaphore 
 	Isnt_Nullptr(posix_sem, false);
   memset(posix_sem, 0, sizeof(union POSIX_Semaphore));
 	Populate_POSIX_Semaphore(posix_sem, value);
+  semaphore->cbk = &posix_sem->Semaphore_Cbk;
 	return NULL != semaphore->cbk;
 }
 
@@ -129,7 +129,7 @@ bool ipc_posix_alloc_conditional(union IPC_Helper * const helper, union Conditio
   Isnt_Nullptr(posix_cv, false);
   memset(posix_cv, 0, sizeof(union POSIX_Conditional));
   Populate_POSIX_Conditional(posix_cv);
-  conditional->cbk = posix_cv;
+  conditional->cbk = &posix_cv->Conditional_Cbk;
   return NULL != conditional->cbk;
 }
 
@@ -139,7 +139,7 @@ bool ipc_posix_alloc_timer(union IPC_Helper * const helper, union Timer * const 
   Isnt_Nullptr(posix_timer, false);
   memset(posix_timer, 0, sizeof(union POSIX_Timer));
   Populate_POSIX_Timer(posix_timer, timer);
-  timer->cbk = posix_timer;
+  timer->cbk = &posix_timer->Timer_Cbk;
   return NULL != timer->cbk;
 }
 

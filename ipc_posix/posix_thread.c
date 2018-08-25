@@ -109,7 +109,7 @@ bool posix_thread_run_thread(union Thread_Cbk * const cbk, union Thread * const 
     union POSIX_Thread * const this = _cast(POSIX_Thread, cbk);
     Isnt_Nullptr(this, false);
     bool rc = false;
-    if(-1 == this->pthread)
+    if((pthread_t)-1 == this->pthread)
     {
         rc = 0 == pthread_create(&this->pthread,
                                 &POSIX_Thread_Attr,
@@ -158,7 +158,7 @@ void Populate_POSIX_Thread(union POSIX_Thread * const this)
         &POSIX_Thread_Class.Class,
         sizeof(POSIX_Thread_Class.Thread_Cbk));
         pthread_attr_init(&POSIX_Thread_Attr);
-        POSIX_Thread.pthread = -1;
+        POSIX_Thread.pthread = (pthread_t)-1;
         Populate_CSet_Cmp_POSIX_Thread_Pair(&POSIX_Thread_PThread_Pool,
                     POSIX_Thread_PThread_Buff,
                     Num_Elems(POSIX_Thread_PThread_Buff), 
@@ -169,5 +169,5 @@ void Populate_POSIX_Thread(union POSIX_Thread * const this)
         POSIX_Thread_Class.Thread_Cbk.run_thread = posix_thread_run_thread;
     }
     _clone(this, POSIX_Thread);
-	this->pthread  = -1;
+	this->pthread  = (pthread_t)-1;
 }
