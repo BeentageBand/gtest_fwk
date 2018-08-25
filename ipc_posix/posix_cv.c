@@ -56,6 +56,8 @@ void Populate_POSIX_Conditional(union POSIX_Conditional * const this)
         Object_Init(&POSIX_Conditional.Object,
                     &POSIX_Conditional_Class.Class,
                     sizeof(POSIX_Conditional_Class.Conditional_Cbk));
+        POSIX_Conditional_Class.Conditional_Cbk.wait = posix_conditional_wait;
+        POSIX_Conditional_Class.Conditional_Cbk.post = posix_conditional_post;
     }
     _clone(this, POSIX_Conditional);
 }

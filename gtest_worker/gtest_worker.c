@@ -64,7 +64,6 @@ int main(int argc, char ** argv)
 	Dbg_Info("Init with %d args", argc);
 	static IPC_POSIX_T posix_helper = {NULL};
 	Populate_IPC_POSIX(&posix_helper);
-	IPC_Helper_Append(&posix_helper.IPC_Helper);
 	Init_Gtest_Worker(argc, argv);
 	IPC_Run(GTEST_FWK_WORKER_TID);
 	Dbg_Info("Wait GTEST_FWK_WORKER_TID");

@@ -105,7 +105,7 @@ void Populate_POSIX_Mutex(union POSIX_Mutex * const this)
         POSIX_Mutex.Mutex_Cbk.vtbl = &Mutex_Cbk_Class;
         Object_Init(&POSIX_Mutex.Object,
                     &POSIX_Mutex_Class.Class,
-                    sizeof(POSIX_Mutex_Class.Mutex_Cbk));
+                    sizeof(POSIX_Mutex_Class.Class));
         pthread_mutexattr_init(&POSIX_Mux_Attr);
     }
     _clone(this, POSIX_Mutex);
@@ -119,8 +119,11 @@ void Populate_Cygwin_Mutex(union Cygwin_Mutex * const this)
         Cygwin_Mutex.Mutex_Cbk.vtbl = &Mutex_Cbk_Class;
         Object_Init(&Cygwin_Mutex.Object,
                     &Cygwin_Mutex_Class.Class,
-                    sizeof(Cygwin_Mutex_Class.Mutex_Cbk));
+                    sizeof(Cygwin_Mutex_Class.Class));
         Cygwin_Mutex.is_locked = false;
+
+        Cygwin_Mutex_Class.Mutex_Cbk.lock = cygwin_mutex_lock;
+        Cygwin_Mutex_Class.Mutex_Cbk.unlock = cygwin_mutex_unlock;
         pthread_mutexattr_init(&Cygwin_Mux_Attr);
         pthread_condattr_init(&Cygwin_CV_Attr);
     }

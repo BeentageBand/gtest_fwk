@@ -111,7 +111,7 @@ bool posix_thread_run_thread(union Thread_Cbk * const cbk, union Thread * const 
     bool rc = false;
     if(-1 == this->pthread)
     {
-        rc = 0 == pthread_create(this->pthread,
+        rc = 0 == pthread_create(&this->pthread,
                                 &POSIX_Thread_Attr,
                                 posix_thread_routine,
                                 (void*)thread);
@@ -163,6 +163,10 @@ void Populate_POSIX_Thread(union POSIX_Thread * const this)
                     POSIX_Thread_PThread_Buff,
                     Num_Elems(POSIX_Thread_PThread_Buff), 
                     (CSet_Cmp_T)posix_thread_cmp);
+        POSIX_Thread_Class.Thread_Cbk.register_thread = posix_thread_register_thread;
+        POSIX_Thread_Class.Thread_Cbk.unregister_thread = posix_thread_unregister_thread;
+        POSIX_Thread_Class.Thread_Cbk.join_thread = posix_thread_join_thread;
+        POSIX_Thread_Class.Thread_Cbk.run_thread = posix_thread_run_thread;
     }
     _clone(this, POSIX_Thread);
 	this->pthread  = -1;
