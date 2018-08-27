@@ -35,7 +35,7 @@ void posix_timer_on_tout(int sig, siginfo_t * siginfo, void * params)
 
 void posix_timer_delete(struct Object * const obj)
 {
-    union POSIX_Timer * const this = (union POSIX_Timer *)Object_Cast(&POSIX_Timer_Class, obj);
+    union POSIX_Timer * const this = (union POSIX_Timer *)Object_Cast(&POSIX_Timer_Class.Class, obj);
     Isnt_Nullptr(this, );
     timer_delete(&this->tmrid);
 }

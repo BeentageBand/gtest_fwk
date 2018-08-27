@@ -44,6 +44,7 @@ void gtest_worker_on_start(union Worker * const super)
    IPC_Ready();
 
    Gtest_Worker_Cbk(this->argc, this->argv);
+   IPC_Send_Self(WORKER_INT_SHUTDOWN_MID, NULL, 0);
 }
 
 static void gtest_worker_on_mail(union Worker * const super, union Mail * const mail)
@@ -67,11 +68,10 @@ int main(int argc, char ** argv)
 	Init_Gtest_Worker(argc, argv);
 	IPC_Run(GTEST_FWK_WORKER_TID);
 	Dbg_Info("Wait GTEST_FWK_WORKER_TID");
-	IPC_Sleep(25000U);
 	IPC_Wait(GTEST_FWK_WORKER_TID, 23000);
 
 	Dbg_Info("main end");
-	while(1){}
+	IPC_Sleep(500);
 }
  
 void Init_Gtest_Worker(int argc, char ** argv)

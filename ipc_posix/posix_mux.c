@@ -39,7 +39,7 @@ static pthread_condattr_t Cygwin_CV_Attr;
 
 void posix_mutex_delete(struct Object * const obj)
 {
-    union POSIX_Mutex * const this = (union POSIX_Mutex *)Object_Cast(&POSIX_Mutex_Class, obj);
+    union POSIX_Mutex * const this = (union POSIX_Mutex *)Object_Cast(&POSIX_Mutex_Class.Class, obj);
     Isnt_Nullptr(this, );
     pthread_mutex_destroy(&this->mux);
 }
@@ -66,7 +66,7 @@ bool posix_mutex_unlock(union Mutex_Cbk * const cbk, union Mutex * const mux)
 
 void cygwin_mutex_delete(struct Object * const obj)
 {
-    union Cygwin_Mutex * const this = (union Cygwin_Mutex *)Object_Cast(&Cygwin_Mutex_Class, obj);
+    union Cygwin_Mutex * const this = (union Cygwin_Mutex *)Object_Cast(&Cygwin_Mutex_Class.Class, obj);
     Isnt_Nullptr(this, );
     pthread_mutex_destroy(&this->mux);
     pthread_cond_destroy(&this->cv);

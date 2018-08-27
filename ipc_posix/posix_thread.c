@@ -68,7 +68,7 @@ void * posix_thread_routine(void * thread)
 
 void posix_thread_delete(struct Object * const obj)
 {
-    union POSIX_Thread * const this = (union POSIX_Thread *)Object_Cast(&POSIX_Thread_Class, obj);
+    union POSIX_Thread * const this = (union POSIX_Thread *)Object_Cast(&POSIX_Thread_Class.Class, obj);
     Isnt_Nullptr(this, );
     pthread_cancel(this->pthread);
 }

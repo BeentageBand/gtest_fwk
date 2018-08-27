@@ -19,7 +19,7 @@ union POSIX_Semaphore_Class POSIX_Semaphore_Class =
 
 void posix_semaphore_delete(struct Object * const obj)
 {
-    union POSIX_Semaphore * const this = (union POSIX_Semaphore *)Object_Cast(&POSIX_Semaphore_Class, obj);
+    union POSIX_Semaphore * const this = (union POSIX_Semaphore *)Object_Cast(&POSIX_Semaphore_Class.Class, obj);
     Isnt_Nullptr(this, );
     sem_destroy(&this->sem);
 }
