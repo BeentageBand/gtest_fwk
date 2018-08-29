@@ -46,7 +46,7 @@ void posix_mutex_delete(struct Object * const obj)
 
 bool posix_mutex_lock(union Mutex_Cbk * const cbk, union Mutex * const mux, IPC_Clock_T const wait_ms)
 {
-#ifndef __CYGWIN__
+#ifdef _POSIX_TIMEOUTS
     union POSIX_Mutex * const this = _cast(POSIX_Mutex, cbk);
     Isnt_Nullptr(this, false);
     struct timespec wait_ts;
@@ -107,6 +107,8 @@ void Populate_POSIX_Mutex(union POSIX_Mutex * const this)
                     &POSIX_Mutex_Class.Class,
                     sizeof(POSIX_Mutex_Class.Class));
         pthread_mutexattr_init(&POSIX_Mux_Attr);
+        POSIX_Mutex_Class.Mutex_Cbk.lock = posix_mutex_lock;
+        POSIX_Mutex_Class.Mutex_Cbk.unlock = posix_mutex_unlock;
     }
     _clone(this, POSIX_Mutex);
     pthread_mutex_init(&this->mux, &POSIX_Mux_Attr);

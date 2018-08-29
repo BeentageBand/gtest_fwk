@@ -88,7 +88,7 @@ bool ipc_posix_alloc_mailbox(union IPC_Helper * const helper, union Mailbox * co
   return rc;
 }
 
-#ifndef __CYGWIN__
+#ifdef _POSIX_TIMEOUTS
 bool ipc_posix_alloc_mutex(union IPC_Helper * const helper, union Mutex * const mutex)
 {
   union POSIX_Mutex * const posix_mux = (union POSIX_Mutex *)malloc(sizeof(union POSIX_Mutex));

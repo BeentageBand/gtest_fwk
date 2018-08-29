@@ -18,6 +18,14 @@ posix_cv \
 posix_tmr \
 
 $(_flavor_)_$(_feat_)_lib=ipc_posix
+
 endef
+
+ifndef $($(_flavor_)_build)_PROJ_LIBS
+$($(_flavor_)_build)_PROJ_LIBS+=\
+	-lpthread \
+	-lrt
+
+endif
 
 -include $(PROJ_MAK_DIR)/epilog.mk
