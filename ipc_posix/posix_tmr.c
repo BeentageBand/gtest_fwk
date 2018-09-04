@@ -8,17 +8,17 @@
 
 static void posix_timer_on_tout(int sig, siginfo_t * siginfo, void * params);
 static void posix_timer_delete(struct Object * const obj);
-static bool posix_timer_start(union Timer_Cbk * const, union Timer * const, IPC_Clock_T const start_ms);
+static bool posix_timer_start(union Timer_Cbk * const, union Timer * const);
 static bool posix_timer_stop(union Timer_Cbk * const, union Timer * const);
 
 static union POSIX_Timer POSIX_Timer = {NULL};
 
 union POSIX_Timer_Class POSIX_Timer_Class = 
-{
+{{
         {posix_timer_delete, NULL},
         posix_timer_start,
         posix_timer_stop
-};
+}};
 
 void posix_timer_on_tout(int sig, siginfo_t * siginfo, void * params)
 {
@@ -40,7 +40,7 @@ void posix_timer_delete(struct Object * const obj)
     timer_delete(&this->tmrid);
 }
 
-bool posix_timer_start(union Timer_Cbk * const cbk, union Timer * const timer, IPC_Clock_T const start_ms)
+bool posix_timer_start(union Timer_Cbk * const cbk, union Timer * const timer)
 {
     union POSIX_Timer * const this = _cast(POSIX_Timer, cbk);
     Isnt_Nullptr(this, false);
@@ -48,12 +48,12 @@ bool posix_timer_start(union Timer_Cbk * const cbk, union Timer * const timer, I
 
     if(timer->is_periodic)
     {
-        ipc_posix_make_timespec(&itimer.it_interval, start_ms);
+        ipc_posix_make_timespec(&itimer.it_interval, timer->tout_ms);
         memset(&itimer.it_value,  0, sizeof(itimer.it_value));
     }
     else
     {
-        ipc_posix_make_timespec(&itimer.it_value, start_ms);
+        ipc_posix_make_timespec(&itimer.it_value, timer->tout_ms);
         memset(&itimer.it_interval,  0, sizeof(itimer.it_interval));
     }
     return 0 == timer_settime(this->tmrid, 0, &itimer, NULL);
@@ -90,7 +90,7 @@ void Populate_POSIX_Timer(union POSIX_Timer * const this, union Timer * const ti
     _clone(this, POSIX_Timer);
 
     sigaction(SIGRTMIN, &POSIX_Timer.sigaction, NULL);
-    POSIX_Timer.sigevent.sigev_value.sival_ptr = &timer;
+    POSIX_Timer.sigevent.sigev_value.sival_ptr = timer;
 
 
     timer_create(CLOCK_MONOTONIC, &this->sigevent, &this->tmrid);

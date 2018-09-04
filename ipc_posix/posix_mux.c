@@ -13,18 +13,18 @@ static bool cygwin_mutex_lock(union Mutex_Cbk * const, union Mutex * const, IPC_
 static bool cygwin_mutex_unlock(union Mutex_Cbk * const, union Mutex * const);
 
 union POSIX_Mutex_Class POSIX_Mutex_Class =
-{
+{{
         {posix_mutex_delete, NULL},
         posix_mutex_lock,
         posix_mutex_unlock
-};
+}};
 
 union Cygwin_Mutex_Class Cygwin_Mutex_Class =
-{
+{{
         {cygwin_mutex_delete, NULL},
         cygwin_mutex_lock,
         cygwin_mutex_unlock
-};
+}};
 
 static union POSIX_Mutex POSIX_Mutex = {NULL};
 static pthread_mutexattr_t POSIX_Mux_Attr;
