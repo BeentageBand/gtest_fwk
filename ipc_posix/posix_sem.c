@@ -11,11 +11,11 @@ static bool posix_semaphore_post(union POSIX_Semaphore * const, union Semaphore 
 static union POSIX_Semaphore POSIX_Semaphore = {NULL};
 
 union POSIX_Semaphore_Class POSIX_Semaphore_Class = 
-{{
+{
     {posix_semaphore_delete, NULL},
     posix_semaphore_wait,
     posix_semaphore_post
-}};
+};
 
 void posix_semaphore_delete(struct Object * const obj)
 {

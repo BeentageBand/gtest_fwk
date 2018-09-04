@@ -17,8 +17,8 @@ typedef union POSIX_Semaphore
 
 typedef union POSIX_Semaphore_Class
 {
-    struct Class Class;
     struct Semaphore_Cbk_Class Semaphore_Cbk;
+    struct Class Class;
 }POSIX_Semaphore_Class_T;
 
 extern union POSIX_Semaphore_Class _private POSIX_Semaphore_Class;

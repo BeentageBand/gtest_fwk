@@ -34,14 +34,14 @@ typedef union Cygwin_Mutex
 
 typedef union POSIX_Mutex_Class
 {
-    struct Class Class;
     struct Mutex_Cbk_Class Mutex_Cbk;
+    struct Class Class;
 }POSIX_Mutex_Class_T;
 
 typedef union Cygwin_Mutex_Class
 {
-    struct Class Class;
     struct Mutex_Cbk_Class Mutex_Cbk;
+    struct Class Class;
 }Cygwin_Mutex_Class_T;
 
 extern union POSIX_Mutex_Class _private POSIX_Mutex_Class;

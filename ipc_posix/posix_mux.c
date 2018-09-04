@@ -14,20 +14,16 @@ static bool cygwin_mutex_unlock(union Mutex_Cbk * const, union Mutex * const);
 
 union POSIX_Mutex_Class POSIX_Mutex_Class =
 {
-    {
         {posix_mutex_delete, NULL},
         posix_mutex_lock,
         posix_mutex_unlock
-    }
 };
 
 union Cygwin_Mutex_Class Cygwin_Mutex_Class =
 {
-    {
         {cygwin_mutex_delete, NULL},
         cygwin_mutex_lock,
         cygwin_mutex_unlock
-    }
 };
 
 static union POSIX_Mutex POSIX_Mutex = {NULL};
@@ -104,8 +100,8 @@ void Populate_POSIX_Mutex(union POSIX_Mutex * const this)
     {
         POSIX_Mutex.Mutex_Cbk.vtbl = &Mutex_Cbk_Class;
         Object_Init(&POSIX_Mutex.Object,
-                    &POSIX_Mutex_Class.Class,
-                    sizeof(POSIX_Mutex_Class.Class));
+                &POSIX_Mutex_Class.Class,
+                sizeof(POSIX_Mutex_Class.Class));
         pthread_mutexattr_init(&POSIX_Mux_Attr);
         POSIX_Mutex_Class.Mutex_Cbk.lock = posix_mutex_lock;
         POSIX_Mutex_Class.Mutex_Cbk.unlock = posix_mutex_unlock;
@@ -120,8 +116,8 @@ void Populate_Cygwin_Mutex(union Cygwin_Mutex * const this)
     {
         Cygwin_Mutex.Mutex_Cbk.vtbl = &Mutex_Cbk_Class;
         Object_Init(&Cygwin_Mutex.Object,
-                    &Cygwin_Mutex_Class.Class,
-                    sizeof(Cygwin_Mutex_Class.Class));
+                &Cygwin_Mutex_Class.Class,
+                sizeof(Cygwin_Mutex_Class.Class));
         Cygwin_Mutex.is_locked = false;
 
         Cygwin_Mutex_Class.Mutex_Cbk.lock = cygwin_mutex_lock;

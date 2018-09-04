@@ -24,8 +24,8 @@ typedef union POSIX_Timer
 
 typedef union POSIX_Timer_Class
 {
-    struct Class Class;
     struct Timer_Cbk_Class Timer_Cbk;
+    struct Class Class;
 }POSIX_Timer_Class_T;
 
 extern union POSIX_Timer_Class _private POSIX_Timer_Class;
