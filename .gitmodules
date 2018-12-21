@@ -4,3 +4,6 @@
 [submodule "ipc_posix"]
 	path = ipc_posix
 	url = git@github.com:BeentageBand/ipc_posix
+[submodule "ipc_mach"]
+	path = ipc_mach
+	url = git@github.com:BeentageBand/ipc_mach.git
