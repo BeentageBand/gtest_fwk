@@ -1,79 +1,30 @@
-#=======================================================================================#
-# api_makefile.mk
-#=======================================================================================#
-#  Created on: Oct 3, 2015
-#      Author: puch
-#=======================================================================================#
+$(_flavor_)_PROJ_INC+=$($(_flavor_)_GTEST_PATH)/googlemock/include
+$(_flavor_)_PROJ_INC+=$($(_flavor_)_GTEST_PATH)/googletest/include
 
-#=======================================================================================#
-# DEFINE PACKAGE RULE
-#=======================================================================================#
-define $(_flavor_)_$(_feat_)_MAKE
-#=======================================================================================#
-# LIB REQUISITES
-#=======================================================================================#
-##
- # Target Library
- # e.g: $(_flavor_)_$(_feat_)_lib=my_lib_name
- ##
-$(_flavor_)_$(_feat_)_lib=gtest
-$(_flavor_)_$(_feat_)_ovr_lib_tar=yes
-ifndef $(_flavor_)_GTEST_PATH
-$(_flavor_)_GTEST_PATH=$($(_flavor_)_$(_feat_)_dir)/googletest/googletest
-endif
-#=======================================================================================#
-# END PACKAGE RULE
-#=======================================================================================#
-endef
-#=======================================================================================#
-# LOCAL VARIABLES
-#=======================================================================================#
+$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/googletest/make/*.[oa]
+$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/googlemock/make/*.[oa]
 
-#=======================================================================================#
-# LOCAL DEFINES 
-#=======================================================================================#
-#all : $($(_flavor_)_GTEST_TARG_INC) $($(_flavor_)_LIB_DIR)/lib$($(_flavor_)_lib_name).a 
-#
-define $(_flavor_)_$(_feat_)_LIB_NAME_MAKE
-$(_flavor_)_PROJ_INC+=$($(_flavor_)_GTEST_PATH)/include
+$(_feat_)_lib=\
+	gmock \
+	gmock_main \
 
-$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.a 
-$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.o
-$(_flavor_)_clean+=$($(_flavor_)_GTEST_PATH)/make/*.exe
-
-$($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_LIB_DIR)/lib%.a) : \
-$($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_GTEST_PATH)/make/%.a) $($(_flavor_)_LIB_DIR)
+define $(_flavor_)_GTEST_MAKE
+$($(_flavor_)_LIB_DIR)/lib$(1).a : $($(_flavor_)_GTEST_PATH)/googlemock/make/$(1).a $($(_flavor_)_LIB_DIR)
 	-cp -Pf $$< $$@;
 
+$($(_flavor_)_GTEST_PATH)/googlemock/make/$(1).a : $($(_flavor_)_GTEST_PATH)/googlemock/make/Makefile $($(_flavor_)_GTEST_PATH)/googletest/make/Makefile
+	$(MAKE) all -C $($(_flavor_)_GTEST_PATH)/googletest/make 
+	$(MAKE) all -C $($(_flavor_)_GTEST_PATH)/googlemock/make 
+
 endef
 
-define LIB_GTEST_MAIN
+ifndef $(_flavor_)_GTEST_OVERRIDE
 
-$($(_flavor_)_$(_feat_)_lib:%=$($(_flavor_)_GTEST_PATH)/make/%.a) : 
-	$(MAKE) $($(_flavor_)_$(_feat_)_lib:=.a) -C $($(_flavor_)_GTEST_PATH)/make/;
-endef
-#=======================================================================================#
-# LOCAL DEFINE EXPANSIONS
-#=======================================================================================#
-$(eval $(call Verbose,$(call $(_flavor_)_$(_feat_)_MAKE)))
+$(foreach _tg_,$($(_feat_)_lib),\
+	$(eval \
+		$(call Verbose,$(call $(_flavor_)_GTEST_MAKE,$(_tg_)))\
+	)\
+)
 
-#=======================================================================================#
-# LOCAL RULES EXPANSIONS
-#=======================================================================================#
-$(eval $(call Verbose,$(call $(_flavor_)_$(_feat_)_LIB_NAME_MAKE)))
-
-#=======================================================================================#
-# INCLUDE PK PROJECT UTILITY
-#=======================================================================================#
-ifndef Gtest_Main_Def
-$(eval $(call Verbose,$(call LIB_GTEST_MAIN)))
-Gtest_Main_Def=yes
+$(_flavor_)_GTEST_OVERRIDE=1
 endif
-
-#=======================================================================================#
-# api_makefile.mk
-#=======================================================================================#
-# Changes Log
-#
-#
-#=======================================================================================#
