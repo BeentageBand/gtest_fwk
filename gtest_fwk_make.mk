@@ -2,8 +2,7 @@ $(_flavor_)_PROJ_INC+=$($(_flavor_)_GTEST_PATH)/googlemock/include
 $(_flavor_)_PROJ_INC+=$($(_flavor_)_GTEST_PATH)/googletest/include
 
 $(_flavor_)_clean+=\
-$($(_flavor_)_GTEST_PATH)/googlemock/make/*.[oa] \
-$($(_flavor_)_GTEST_PATH)/googletest/make/*.[oa] \
+$($(_flavor_)_GTEST_PATH)/lib
 
 $(_feat_)_lib=\
 	gmock \
@@ -11,11 +10,12 @@ $(_feat_)_lib=\
 	gtest
 
 define $(_flavor_)_GTEST_MAKE
-$($(_flavor_)_LIB_DIR)/lib$(1).a : $($(_flavor_)_GTEST_PATH)/googlemock/make/lib$(1).a
+$($(_flavor_)_LIB_DIR)/lib$(1).a : $($(_flavor_)_GTEST_PATH)/lib/lib$(1).a
 	-cp -Pf $$< $$@;
 
-$($(_flavor_)_GTEST_PATH)/googlemock/make/lib$(1).a : $($(_flavor_)_GTEST_PATH)/googlemock/make 
-	-make lib$(1).a -C $($(_flavor_)_GTEST_PATH)/googlemock/make  CXX=$(CPP)
+$($(_flavor_)_GTEST_PATH)/lib/lib$(1).a :
+	cmake $($(_flavor_)_GTEST_PATH)
+	-make $(1) -C $($(_flavor_)_GTEST_PATH)
 
 endef
 
